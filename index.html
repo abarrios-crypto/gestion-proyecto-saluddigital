@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Alfabetización Digital en Salud · UAS-CA-347</title>
+<meta name="description" content="Gestión del proyecto de intervención en alfabetización digital en salud de personas adultas mayores — UAS-CA-347." />
+<meta name="theme-color" content="#1E2A38" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="tag">UAS-CA-347 · Facultad de Biología</span>
+      <h1>Alfabetización Digital en Salud</h1>
+    </div>
+    <nav class="views">
+      <button data-view="panel" class="active">Panel</button>
+      <button data-view="cronograma">Cronograma</button>
+      <button data-view="actividades">Actividades</button>
+      <button data-view="notas">Bitácora / Notas</button>
+      <button data-view="reportes">Reportes</button>
+      <button data-view="ajustes">Ajustes</button>
+    </nav>
+    <div class="status" id="connStatus"><span class="dot"></span><span id="connText">Sin conectar</span></div>
+  </aside>
+
+  <main>
+
+    <!-- PANEL -->
+    <section class="view active" id="view-panel">
+      <header class="view-header">
+        <div>
+          <h2>Panel general</h2>
+          <p id="projectSubtitle">Prácticas digitales, brechas informativas e intervención en alfabetización digital en salud de personas adultas mayores.</p>
+        </div>
+        <button class="btn secondary" id="btnSync">Sincronizar</button>
+      </header>
+
+      <div class="stat-grid" id="statGrid"></div>
+
+      <div class="gantt" id="panelMiniGantt"></div>
+    </section>
+
+    <!-- CRONOGRAMA -->
+    <section class="view" id="view-cronograma">
+      <header class="view-header">
+        <div>
+          <h2>Cronograma</h2>
+          <p>Vigencia del proyecto: agosto 2026 – julio 2027. Cada franja representa una meta; da clic para ver sus actividades.</p>
+        </div>
+      </header>
+      <div id="ganttFull"></div>
+    </section>
+
+    <!-- ACTIVIDADES -->
+    <section class="view" id="view-actividades">
+      <header class="view-header">
+        <div>
+          <h2>Actividades</h2>
+          <p>Marca el avance de cada actividad y asigna responsables. Los cambios se guardan en la hoja de cálculo.</p>
+        </div>
+      </header>
+      <div class="filters">
+        <select id="filterMeta"><option value="">Todas las metas</option></select>
+        <select id="filterEstado">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="en_curso">En curso</option>
+          <option value="completada">Completada</option>
+        </select>
+        <input type="text" id="filterTexto" placeholder="Buscar…" />
+      </div>
+      <div class="act-list" id="actList"></div>
+    </section>
+
+    <!-- NOTAS -->
+    <section class="view" id="view-notas">
+      <header class="view-header">
+        <div>
+          <h2>Bitácora / Notas</h2>
+          <p>Registra observaciones de campo, acuerdos o pendientes. Queda fechado automáticamente.</p>
+        </div>
+      </header>
+      <div class="nota-form">
+        <textarea id="notaContenido" placeholder="Escribe una nota…"></textarea>
+        <div class="row">
+          <input type="text" id="notaAutor" placeholder="Tu nombre" />
+          <input type="text" id="notaEtiqueta" placeholder="Etiqueta (ej. diagnóstico, taller, imprevisto)" />
+          <button class="btn" id="btnAddNota">Guardar nota</button>
+        </div>
+      </div>
+      <div id="notaList"></div>
+    </section>
+
+    <!-- REPORTES -->
+    <section class="view" id="view-reportes">
+      <header class="view-header">
+        <div>
+          <h2>Reportes de avance</h2>
+          <p>Genera un resumen del estado actual del proyecto, listo para compartir o archivar en la hoja de cálculo.</p>
+        </div>
+        <button class="btn" id="btnGenReport">Generar reporte</button>
+      </header>
+      <div class="report-box" id="reportBox">Aún no se ha generado ningún reporte en esta sesión.</div>
+      <div style="margin-top:14px; display:flex; gap:10px;">
+        <button class="btn secondary" id="btnDownloadReport">Descargar .md</button>
+        <button class="btn secondary" id="btnSaveReport">Guardar en Sheet</button>
+      </div>
+      <h3 style="font-family:var(--serif); margin-top:30px;">Historial</h3>
+      <div id="reportHistory"></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="view" id="view-ajustes">
+      <header class="view-header">
+        <div>
+          <h2>Ajustes</h2>
+          <p>Conecta la app con tu Google Sheet (a través del backend de Apps Script).</p>
+        </div>
+      </header>
+      <form class="settings-form" id="settingsForm">
+        <div>
+          <label for="apiUrl">URL de la aplicación web (Apps Script)</label>
+          <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+          <p class="hint">La obtienes al hacer "Implementar &gt; Nueva implementación &gt; Aplicación web" en el editor de Apps Script del Sheet.</p>
+        </div>
+        <div>
+          <label for="apiToken">Token de acceso (APP_TOKEN)</label>
+          <input type="password" id="apiToken" placeholder="mismo valor que configuraste en Propiedades del script" />
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn">Guardar y conectar</button>
+          <button type="button" class="btn secondary" id="btnTestConn">Probar conexión</button>
+        </div>
+        <p class="hint" id="settingsMsg"></p>
+      </form>
+
+      <h3 style="font-family:var(--serif); margin-top:34px;">Modo sin conexión</h3>
+      <p class="hint">Mientras no conectes un Sheet, la app funciona con datos de ejemplo guardados en tu navegador (localStorage), para que puedas probarla de inmediato.</p>
+      <button class="btn danger" id="btnReset">Restablecer datos locales</button>
+    </section>
+
+  </main>
+</div>
+
+<script src="js/data-seed.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

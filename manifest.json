@@ -1,0 +1,17 @@
+{
+  "name": "Alfabetización Digital en Salud — UAS-CA-347",
+  "short_name": "AlfabDigSalud",
+  "description": "Gestión del proyecto de intervención en alfabetización digital en salud de personas adultas mayores.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F6F4EE",
+  "theme_color": "#1E2A38",
+  "lang": "es-MX",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

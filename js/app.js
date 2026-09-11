@@ -7,15 +7,41 @@
 const LS_CONFIG = "pwa_config";
 const LS_CACHE = "pwa_cache";
 
+/**
+ * Configuración por defecto del equipo: así nadie tiene que pegar la URL
+ * ni el token manualmente — la app ya viene conectada al Sheet del
+ * proyecto. Reemplaza estos dos valores por los tuyos antes de publicar
+ * en GitHub Pages. Cualquier persona puede seguir sobreescribiéndolos
+ * desde Ajustes (por ejemplo, para apuntar a un Sheet de pruebas), y esa
+ * elección personal queda guardada solo en su navegador.
+ */
+const DEFAULT_CONFIG = {
+  apiUrl: "https://script.google.com/macros/s/AKfycbwy8aHNNEytuL-afW2RmljyknzIxM5Dogm6iP5MIT-dwPfVqRfYUetENrBLuJkFC5S05Q/exec",
+  apiToken: "100888",
+};
+
 let STORE = { objetivos: [], metas: [], actividades: [], notas: [], reportes: [] };
 let CONFIG = { apiUrl: "", apiToken: "" };
+
+const LS_USER = "pwa_user_name";
+const LS_READONLY = "pwa_readonly";
+
+function getUserName() { return localStorage.getItem(LS_USER) || ""; }
+function setUserName(name) { localStorage.setItem(LS_USER, name.trim()); }
+function isReadOnly() { return localStorage.getItem(LS_READONLY) === "1"; }
+function setReadOnly(val) { localStorage.setItem(LS_READONLY, val ? "1" : "0"); }
 
 /* ---------------- Configuración y arranque ---------------- */
 
 function loadConfig() {
-  try { CONFIG = JSON.parse(localStorage.getItem(LS_CONFIG)) || CONFIG; } catch (e) {}
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(LS_CONFIG)); } catch (e) {}
+  const tieneDefault = DEFAULT_CONFIG.apiUrl && DEFAULT_CONFIG.apiUrl.indexOf("PEGA_AQUI") === -1;
+  CONFIG = stored || (tieneDefault ? { ...DEFAULT_CONFIG } : { apiUrl: "", apiToken: "" });
   document.getElementById("apiUrl").value = CONFIG.apiUrl || "";
   document.getElementById("apiToken").value = CONFIG.apiToken || "";
+  document.getElementById("userName").value = getUserName();
+  document.getElementById("readOnlyToggle").checked = isReadOnly();
 }
 
 function saveConfig(apiUrl, apiToken) {
@@ -235,6 +261,7 @@ function renderActividades() {
 
   el.innerHTML = list.map(a => {
     const meta = metaById(a.meta);
+    const ro = isReadOnly();
     return `
     <div class="act-item" style="border-left-color:${meta ? meta.color : "var(--azul)"}" data-id="${a.id}">
       <div>
@@ -243,11 +270,11 @@ function renderActividades() {
       </div>
       <div>
         <div class="desc">${escapeHtml(a.descripcion)}</div>
-        <div class="meta-tag">${meta ? meta.id + " · Objetivo " + meta.objetivo : a.meta}</div>
-        <input class="responsable-input" data-field="responsable" placeholder="Responsable" value="${escapeAttr(a.responsable || "")}" />
+        <div class="meta-tag">${meta ? meta.id + " · Objetivo " + meta.objetivo : a.meta}${a.actualizado_por ? " · últ. edición: " + escapeHtml(a.actualizado_por) : ""}</div>
+        <input class="responsable-input" data-field="responsable" placeholder="Responsable" value="${escapeAttr(a.responsable || "")}" ${ro ? "disabled" : ""} />
       </div>
       <div>
-        <select class="estado" data-field="estado">
+        <select class="estado" data-field="estado" ${ro ? "disabled" : ""}>
           <option value="pendiente" ${a.estado === "pendiente" ? "selected" : ""}>Pendiente</option>
           <option value="en_curso" ${a.estado === "en_curso" ? "selected" : ""}>En curso</option>
           <option value="completada" ${a.estado === "completada" ? "selected" : ""}>Completada</option>
@@ -255,6 +282,8 @@ function renderActividades() {
       </div>
     </div>`;
   }).join("");
+
+  if (isReadOnly()) return; // no engancha eventos de edición en modo revisión
 
   el.querySelectorAll(".act-item").forEach(item => {
     const id = item.dataset.id;
@@ -266,6 +295,7 @@ function renderActividades() {
 async function updateActividad(id, payload) {
   const act = STORE.actividades.find(a => a.id === id);
   if (!act) return;
+  payload.actualizado_por = getUserName() || "Sin nombre";
   Object.assign(act, payload);
   persistLocal();
   renderPanel();
@@ -273,6 +303,15 @@ async function updateActividad(id, payload) {
 }
 
 /* ---------------- Render: Notas ---------------- */
+
+function applyReadOnlyUI() {
+  const ro = isReadOnly();
+  ["notaContenido", "notaAutor", "notaEtiqueta", "btnAddNota"].forEach(id => {
+    document.getElementById(id).disabled = ro;
+  });
+  const banner = document.getElementById("readOnlyBanner");
+  if (banner) banner.style.display = ro ? "block" : "none";
+}
 
 function renderNotas() {
   const el = document.getElementById("notaList");
@@ -289,12 +328,13 @@ function renderNotas() {
 }
 
 async function addNota() {
+  if (isReadOnly()) return;
   const contenido = document.getElementById("notaContenido").value.trim();
   if (!contenido) return;
   const nota = {
     id: "N-" + Date.now(),
     fecha: new Date().toISOString(),
-    autor: document.getElementById("notaAutor").value.trim(),
+    autor: getUserName() || document.getElementById("notaAutor").value.trim(),
     contenido,
     etiqueta: document.getElementById("notaEtiqueta").value.trim(),
   };
@@ -357,6 +397,7 @@ function estadoLabel(e) { return e === "completada" ? "Completada" : e === "en_c
 /* ---------------- Render global ---------------- */
 
 function renderAll() {
+  applyReadOnlyUI();
   renderPanel();
   renderCronograma();
   renderActividades();
@@ -409,6 +450,10 @@ function setupEvents() {
   document.getElementById("settingsForm").addEventListener("submit", e => {
     e.preventDefault();
     saveConfig(document.getElementById("apiUrl").value, document.getElementById("apiToken").value);
+    setUserName(document.getElementById("userName").value);
+    setReadOnly(document.getElementById("readOnlyToggle").checked);
+    applyReadOnlyUI();
+    renderActividades();
     document.getElementById("settingsMsg").textContent = "Configuración guardada. Sincronizando…";
     sync();
   });
